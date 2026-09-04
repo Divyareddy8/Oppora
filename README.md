@@ -63,25 +63,3 @@ npm run dev
 
 Frontend: http://localhost:3000
 
-## Demo account
-
-After seeding:
-
-- Email: `demo@student.com`
-- Password: `password123`
-
-## Phase 1 recommendation logic
-
-The feed score is intentionally explainable and rule-based:
-
-- role match: +30
-- skill overlap: +25
-- location match: +15
-- opportunity type preference: +10
-- company tier preference: +10
-- verified source: +5
-- deadline urgency: +5
-
-Hard filters are applied before ranking.
-
-Do NOT add embeddings/LLMs yet. Phase 2 will introduce semantic matching, skill extraction, deduplication and richer company tiering.
