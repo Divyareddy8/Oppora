@@ -7,7 +7,8 @@ type Opportunity = {
   id:number; title:string; organization:string; opportunity_type:string;
   role:string; description:string; source_url:string; source_name:string;
   deadline:string|null; location:string; company_tier:string; verified:boolean;
-  women_focused:boolean; skills:string[]; match_score:number|null; reasons:string[];
+  inferred_company_tier:string; women_focused:boolean; skills:string[];
+  match_score:number|null; semantic_score:number|null; reasons:string[];
 };
 
 export default function Feed() {
@@ -48,7 +49,7 @@ export default function Feed() {
       </nav>
 
       <h1>Your opportunity feed</h1>
-      <p className="muted">Rule-based Phase 1 personalization. ML comes in Phase 2.</p>
+      <p className="muted">Personalized using your skills, goals, and semantic profile matching.</p>
 
       <div className="card">
         <h3>Search / filter</h3>
@@ -79,11 +80,11 @@ export default function Feed() {
           <article className="card" key={op.id}>
             <div style={{display:"flex", justifyContent:"space-between"}}>
               <span className="badge">{op.opportunity_type}</span>
-              <span className="score">{op.match_score != null ? `${op.match_score}%` : ""}</span>
+              <span className="score">{op.match_score != null ? `${op.match_score}% match` : ""}</span>
             </div>
             <h2>{op.title}</h2>
             <p><strong>{op.organization}</strong> · {op.role}</p>
-            <p className="muted">{op.location} · Tier {op.company_tier}</p>
+            <p className="muted">{op.location} · Tier {op.inferred_company_tier || op.company_tier}</p>
             {op.verified && <span className="badge">✓ Verified source</span>}
             {op.women_focused && <span className="badge">Women-focused</span>}
             <p>{op.description}</p>
@@ -92,7 +93,7 @@ export default function Feed() {
 
             {op.reasons?.length > 0 && (
               <div>
-                <strong>Why this matches:</strong>
+                <strong>Why this matches you:</strong>
                 <ul>{op.reasons.map(r=><li key={r}>{r}</li>)}</ul>
               </div>
             )}

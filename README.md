@@ -1,4 +1,4 @@
-# Opportunity Radar — Phase 1 (Local MVP)
+# Opportunity Radar — Phase 2 (Local MVP)
 
 India-first opportunity intelligence platform for students and working professionals.
 
@@ -11,6 +11,14 @@ Phase 1 implements:
 - Rule-based personalized feed
 - Save opportunities
 - Local SQLite database (easy to migrate to PostgreSQL later)
+
+Phase 2 adds:
+- Profile and opportunity skill matching
+- Sentence Transformers semantic similarity when the model is available
+- Deterministic token similarity fallback for offline/local development
+- Better duplicate suppression across opportunity sources
+- Automatic company tier inference for known organizations
+- Semantic match scores and "Why this matches you" explanations in the feed
 
 No deployment is included.
 
@@ -27,6 +35,7 @@ Backend:
 - SQLite locally
 - JWT authentication
 - Pydantic
+- Sentence Transformers for semantic matching
 
 ## Run
 
@@ -51,6 +60,10 @@ uvicorn app.main:app --reload
 Backend: http://127.0.0.1:8000
 Swagger: http://127.0.0.1:8000/docs
 
+The first personalized-feed request may download the `all-MiniLM-L6-v2`
+Sentence Transformers model. If it cannot be downloaded or loaded, the API
+uses its deterministic token-similarity fallback instead.
+
 ### 2. Frontend
 
 Open another terminal:
@@ -62,4 +75,19 @@ npm run dev
 ```
 
 Frontend: http://localhost:3000
+
+## Git workflow
+
+Keep `node_modules`, `.next`, Python caches, virtual environments, and local
+database files out of Git. They are covered by the repository `.gitignore` and
+should not be deleted before committing.
+
+```bash
+git status
+git add .
+git commit -m "Build Phase 2 semantic opportunity matching"
+git push origin main
+```
+
+If your branch is not `main`, replace `main` with the current branch name.
 

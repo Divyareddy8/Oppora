@@ -53,10 +53,12 @@ class OpportunityOut(BaseModel):
     experience_min: int
     experience_max: int
     company_tier: str
+    inferred_company_tier: str = "Unrated"
     verified: bool
     women_focused: bool
     skills: List[str] = []
     match_score: Optional[int] = None
+    semantic_score: Optional[int] = None
     reasons: List[str] = []
 
 
