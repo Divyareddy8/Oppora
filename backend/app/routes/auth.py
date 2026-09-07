@@ -11,10 +11,16 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse)
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.email == data.email).first():
+    email = str(data.email).lower()
+    if not email.endswith("@gmail.com"):
+        raise HTTPException(status_code=400, detail="Please register with a Gmail address")
+    if len(data.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    user = User(email=data.email, password_hash=hash_password(data.password))
+    user = User(email=email, password_hash=hash_password(data.password))
     db.add(user)
     db.flush()
 

@@ -18,7 +18,7 @@ export default function Register() {
         body: JSON.stringify({ email, password }),
       });
       localStorage.setItem("token", data.access_token);
-      router.push("/profile");
+      router.push("/feed");
     } catch (e: any) {
       setError(e.message);
     }
@@ -28,11 +28,12 @@ export default function Register() {
     <main className="container">
       <div className="card" style={{maxWidth:450, margin:"40px auto"}}>
         <h1>Create account</h1>
+        <p className="muted">Start with your Gmail and password. You can add optional filters later.</p>
         <form onSubmit={submit}>
-          <label>Email<input value={email} onChange={e=>setEmail(e.target.value)} /></label>
-          <label>Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)} /></label>
+          <label>Gmail address<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@gmail.com" /></label>
+          <label>Password<input type="password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
           {error && <p className="error">{error}</p>}
-          <button>Create account</button>
+          <button>Create account and browse</button>
         </form>
       </div>
     </main>

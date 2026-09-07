@@ -35,7 +35,7 @@ export default function Profile() {
   return (
     <main className="container">
       <h1>Your profile</h1>
-      <p className="muted">These preferences drive Phase 1 ranking.</p>
+      <p className="muted">Optional filters that improve your recommendations. You can still browse every opportunity without completing this form.</p>
 
       <form className="card" onSubmit={save}>
         <div className="row">
