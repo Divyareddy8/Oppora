@@ -35,7 +35,7 @@ Backend:
 - SQLite locally
 - JWT authentication
 - Pydantic
-- Sentence Transformers for semantic matching
+- Optional Sentence Transformers for enhanced semantic matching
 
 ## Run
 
@@ -60,9 +60,16 @@ uvicorn app.main:app --reload
 Backend: http://127.0.0.1:8000
 Swagger: http://127.0.0.1:8000/docs
 
-The first personalized-feed request may download the `all-MiniLM-L6-v2`
-Sentence Transformers model. If it cannot be downloaded or loaded, the API
-uses its deterministic token-similarity fallback instead.
+The API uses a deterministic token-similarity fallback by default. For the
+optional enhanced semantic model, install Sentence Transformers separately:
+
+```bash
+pip install sentence-transformers
+```
+
+The first personalized-feed request may then download the `all-MiniLM-L6-v2`
+model. If it cannot be downloaded or loaded, the API continues using the
+deterministic fallback.
 
 ### 2. Frontend
 
