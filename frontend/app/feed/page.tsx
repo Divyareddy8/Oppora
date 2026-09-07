@@ -48,8 +48,10 @@ export default function Feed() {
         <a href="/profile">Profile</a>
       </nav>
 
-      <h1>Your opportunity feed</h1>
-      <p className="muted">Personalized using your skills, goals, and semantic profile matching.</p>
+      <div className="feed-header">
+        <h1>Your opportunity feed</h1>
+        <p className="muted">Personalized using your skills, goals, and semantic profile matching.</p>
+      </div>
 
       <div className="card">
         <h3>Search / filter</h3>
@@ -92,7 +94,7 @@ export default function Feed() {
             <p><strong>Deadline:</strong> {op.deadline || "Not specified"}</p>
 
             {op.reasons?.length > 0 && (
-              <div>
+              <div className="match-panel">
                 <strong>Why this matches you:</strong>
                 <ul>{op.reasons.map(r=><li key={r}>{r}</li>)}</ul>
               </div>
