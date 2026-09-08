@@ -134,6 +134,11 @@ add_opportunity(
     "Bangalore", "NVIDIA Careers", "https://www.nvidia.com/en-us/about-nvidia/careers/", experience_min=0, experience_max=1, eligible_branches=["ECE", "AIML"]
 )
 add_opportunity(
+    "Embedded Firmware Engineer", "Nokia", "Job", "Embedded Engineer",
+    ["C", "C++", "Embedded Systems"], "A", today + timedelta(days=29),
+    "Chennai", "Nokia Careers", "https://www.nokia.com/about-us/careers/", experience_min=1, experience_max=4, eligible_branches=["ECE"]
+)
+add_opportunity(
     "Associate Software Engineer", "Walmart Global Tech", "Job", "SDE",
     ["Java", "Python", "Cloud"], "A", today + timedelta(days=34),
     "Chennai", "Walmart Careers", "https://careers.walmart.com/", experience_min=0, experience_max=3

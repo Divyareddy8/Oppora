@@ -50,6 +50,10 @@ export default function Feed() {
     }).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    setAppliedFilters({ search, type, tier, audience, role, source, branches, experience, skill, location, verifiedOnly });
+  }, [search, type, tier, audience, role, source, branches, experience, skill, location, verifiedOnly]);
+
   function matchesExperience(op: Opportunity) {
     if (!appliedFilters.experience) return true;
     if (appliedFilters.experience === "0") return op.experience_min === 0 && op.experience_max <= 1;
