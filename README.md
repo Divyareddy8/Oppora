@@ -9,6 +9,7 @@ Oppora is an opportunity discovery and application-tracking platform for student
 - Years-of-experience and seniority matching
 - Target-company preferences
 - Personalized opportunity feed with search and filters
+- Official-source coverage from seeded company portals across Bangalore, Hyderabad, Chennai, Mumbai, and Gurgaon
 - Skill, role, location, type, tier, and semantic matching
 - Content-based and interaction-based recommendations
 - Cold-start recommendations for new users
@@ -68,6 +69,21 @@ npm run dev
 Frontend: http://localhost:3000
 
 The default demo account is `demo@student.com` with password `password123` after running the seed command.
+
+### Fetch live jobs
+
+The built-in importer supports public Greenhouse, Lever, Ashby, SmartRecruiters, and configured Workday JSON endpoints. Workday URLs vary by company, so provide the exact official endpoint. Set comma-separated board IDs, company handles, or Workday URLs, then run:
+
+```powershell
+$env:GREENHOUSE_BOARDS="company-one,company-two"
+$env:LEVER_SITES="company-one"
+$env:ASHBY_BOARDS="company-one"
+$env:SMARTRECRUITERS_COMPANIES="company-one"
+$env:WORKDAY_ENDPOINTS="https://company.wd5.myworkdayjobs.com/wday/cxs/company/site/jobs"
+python -m app.fetch_jobs
+```
+
+Fetched records are marked as verified and deduplicated by source URL. The importer is intentionally opt-in so local development does not depend on external portals or overload them.
 
 ## Optional notifications and embeddings
 

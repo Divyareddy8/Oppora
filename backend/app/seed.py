@@ -38,7 +38,7 @@ def get_skill(name):
 
 def add_opportunity(
     title, org, typ, role, skills, tier, deadline, location,
-    source_name, source_url, verified=True, women=False
+    source_name, source_url, verified=True, women=False, experience_min=0, experience_max=2
 ):
     op = Opportunity(
         title=title,
@@ -53,6 +53,8 @@ def add_opportunity(
         company_tier=tier,
         verified=verified,
         women_focused=women,
+        experience_min=experience_min,
+        experience_max=experience_max,
     )
     op.skills = [get_skill(s) for s in skills]
     db.add(op)
@@ -62,6 +64,66 @@ add_opportunity(
     "Software Engineering Internship", "Google", "Internship", "SDE",
     ["Python", "C++", "DSA"], "S", today + timedelta(days=12),
     "Bangalore/Remote", "Google Careers", "https://www.google.com/about/careers/applications/"
+)
+add_opportunity(
+    "Backend Engineer", "Swiggy", "Job", "Software Engineer",
+    ["Python", "Go", "PostgreSQL"], "A", today + timedelta(days=40),
+    "Bangalore", "Swiggy Careers", "https://careers.swiggy.com/", experience_min=2, experience_max=5
+)
+add_opportunity(
+    "Software Development Engineer", "Flipkart", "Job", "SDE",
+    ["Java", "Python", "Kubernetes"], "A", today + timedelta(days=35),
+    "Bangalore", "Flipkart Careers", "https://www.flipkartcareers.com/", experience_min=1, experience_max=4
+)
+add_opportunity(
+    "Machine Learning Engineer", "Microsoft", "Job", "MLE",
+    ["Python", "Azure", "Machine Learning"], "S", today + timedelta(days=45),
+    "Hyderabad", "Microsoft Careers", "https://careers.microsoft.com/", experience_min=2, experience_max=6
+)
+add_opportunity(
+    "Cloud Software Engineer", "Amazon", "Job", "Software Engineer",
+    ["Java", "AWS", "Distributed Systems"], "S", today + timedelta(days=42),
+    "Hyderabad", "Amazon Jobs", "https://www.amazon.jobs/en/", experience_min=3, experience_max=8
+)
+add_opportunity(
+    "Full Stack Engineer", "Zoho", "Job", "Software Engineer",
+    ["Java", "React", "SQL"], "A", today + timedelta(days=28),
+    "Chennai", "Zoho Careers", "https://www.zoho.com/careers/", experience_min=1, experience_max=4
+)
+add_opportunity(
+    "Data Engineer", "Freshworks", "Job", "Data Engineer",
+    ["Python", "SQL", "Data Engineering"], "A", today + timedelta(days=32),
+    "Chennai", "Freshworks Careers", "https://www.freshworks.com/company/careers/", experience_min=2, experience_max=5
+)
+add_opportunity(
+    "Product Engineer", "Dream11", "Job", "Software Engineer",
+    ["Java", "React", "AWS"], "A", today + timedelta(days=38),
+    "Mumbai", "Dream Sports Careers", "https://www.dreamsports.group/careers/", experience_min=2, experience_max=6
+)
+add_opportunity(
+    "Analytics Engineer", "Tata Digital", "Job", "Data Scientist",
+    ["Python", "SQL", "Analytics"], "A", today + timedelta(days=30),
+    "Mumbai", "Tata Careers", "https://www.tata.com/careers", experience_min=1, experience_max=5
+)
+add_opportunity(
+    "Platform Engineer", "MakeMyTrip", "Job", "Software Engineer",
+    ["Java", "Kubernetes", "AWS"], "A", today + timedelta(days=36),
+    "Gurgaon", "MakeMyTrip Careers", "https:// careers.makemytrip.com/".replace(" ", ""), experience_min=3, experience_max=7
+)
+add_opportunity(
+    "Applied Scientist", "Adobe", "Job", "Research",
+    ["Python", "PyTorch", "Machine Learning"], "A", today + timedelta(days=50),
+    "Gurgaon", "Adobe Careers", "https://www.adobe.com/careers.html", experience_min=2, experience_max=6
+)
+add_opportunity(
+    "Software Engineer Intern", "Atlassian", "Internship", "SDE",
+    ["Java", "Python", "React"], "S", today + timedelta(days=20),
+    "Bangalore", "Atlassian Careers", "https://www.atlassian.com/company/careers", experience_min=0, experience_max=1
+)
+add_opportunity(
+    "Associate Software Engineer", "Walmart Global Tech", "Job", "SDE",
+    ["Java", "Python", "Cloud"], "A", today + timedelta(days=34),
+    "Chennai", "Walmart Careers", "https://careers.walmart.com/", experience_min=0, experience_max=3
 )
 add_opportunity(
     "AI/ML Research Internship", "IISc", "Research", "Research",

@@ -13,7 +13,7 @@ type Opportunity = {
 };
 
 type Filters = {
-  search:string; type:string; tier:string; audience:string; role:string;
+  search:string; type:string; tier:string; audience:string; role:string; source:string;
   experience:string; skill:string; location:string; verifiedOnly:boolean;
 };
 
@@ -28,9 +28,10 @@ export default function Feed() {
   const [experience, setExperience] = useState("");
   const [skill, setSkill] = useState("");
   const [location, setLocation] = useState("");
+  const [source, setSource] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<Filters>({
-    search:"", type:"", tier:"", audience:"all", role:"", experience:"",
+    search:"", type:"", tier:"", audience:"all", role:"", source:"", experience:"",
     skill:"", location:"", verifiedOnly:false,
   });
   const [error, setError] = useState("");
@@ -71,17 +72,18 @@ export default function Feed() {
       && (!appliedFilters.type || op.opportunity_type === appliedFilters.type)
       && (!appliedFilters.tier || (op.inferred_company_tier || op.company_tier) === appliedFilters.tier)
       && audienceMatches && roleMatches && matchesExperience(op) && skillMatches
-      && locationMatches && (!appliedFilters.verifiedOnly || op.verified);
+      && locationMatches && (!appliedFilters.source || op.source_name === appliedFilters.source)
+      && (!appliedFilters.verifiedOnly || op.verified);
   });
 
   function applyFilters() {
-    setAppliedFilters({ search, type, tier, audience, role, experience, skill, location, verifiedOnly });
+    setAppliedFilters({ search, type, tier, audience, role, source, experience, skill, location, verifiedOnly });
   }
 
   function clearFilters() {
-    setSearch(""); setType(""); setTier(""); setRole(""); setExperience("");
+    setSearch(""); setType(""); setTier(""); setRole(""); setSource(""); setExperience("");
     setSkill(""); setLocation(""); setVerifiedOnly(false); setAudience("all");
-    setAppliedFilters({ search:"", type:"", tier:"", audience:"all", role:"", experience:"", skill:"", location:"", verifiedOnly:false });
+    setAppliedFilters({ search:"", type:"", tier:"", audience:"all", role:"", source:"", experience:"", skill:"", location:"", verifiedOnly:false });
   }
 
   async function save(id:number) {
@@ -127,7 +129,12 @@ export default function Feed() {
             <select value={experience} onChange={e=>setExperience(e.target.value)}><option value="">Any experience</option><option value="0">Student / 0-1 year</option><option value="1-3">1-3 years</option><option value="3-5">3-5 years</option><option value="5+">5+ years</option></select>
           </label>
           <label>Skill<input value={skill} onChange={e=>setSkill(e.target.value)} placeholder="e.g. Python" /></label>
-          <label>Location<input value={location} onChange={e=>setLocation(e.target.value)} placeholder="Remote, Bangalore" /></label>
+          <label>Location
+            <select value={location} onChange={e=>setLocation(e.target.value)}><option value="">All locations</option><option>Bangalore</option><option>Hyderabad</option><option>Chennai</option><option>Mumbai</option><option>Gurgaon</option><option>Delhi</option><option>Remote</option></select>
+          </label>
+          <label>Source
+            <select value={source} onChange={e=>setSource(e.target.value)}><option value="">All official sources</option>{Array.from(new Set(items.map(item=>item.source_name))).sort().map(item=><option key={item}>{item}</option>)}</select>
+          </label>
           <label>Opportunity type
             <select value={type} onChange={e=>setType(e.target.value)}><option value="">All types</option><option>Internship</option><option>Research</option><option>Hackathon</option><option>Scholarship</option><option>Open Source</option></select>
           </label>
