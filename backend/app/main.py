@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, engine
-from .routes import applications, auth, notifications, profile, opportunities
+from .routes import applications, auth, governance, notifications, profile, opportunities
 
 Base.metadata.create_all(bind=engine)
 
@@ -21,6 +21,7 @@ app.include_router(profile.router)
 app.include_router(opportunities.router)
 app.include_router(applications.router)
 app.include_router(notifications.router)
+app.include_router(governance.router)
 
 
 @app.get("/")

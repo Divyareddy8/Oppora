@@ -6,19 +6,21 @@ import { api } from "../../lib/api";
 type Opportunity = { id:number; title:string; organization:string; opportunity_type:string; role:string; description:string; source_url:string; deadline:string|null; location:string; skills:string[]; verified:boolean; };
 type Application = { id:number; status:string; notes:string; applied_at:string|null; follow_up_date:string|null; opportunity:Opportunity; };
 type Preferences = { email_enabled:boolean; deadline_alerts:boolean; daily_digest:boolean; telegram_enabled:boolean; telegram_chat_id:string; digest_hour:number; };
+type RecommendationPreferences = { target_companies:string[]; target_seniority:string; };
 const statuses = ["saved", "applied", "interview", "offer", "rejected", "withdrawn"];
 
 export default function Profile() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [preferences, setPreferences] = useState<Preferences | null>(null);
+  const [recommendationPreferences, setRecommendationPreferences] = useState<RecommendationPreferences>({target_companies:[], target_seniority:"auto"});
   const [tab, setTab] = useState<"tracker" | "alerts">("tracker");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
   async function load() {
     try {
-      const [tracker, settings] = await Promise.all([api("/applications"), api("/notifications/preferences")]);
-      setApplications(tracker); setPreferences(settings);
+      const [tracker, settings, recommendationSettings] = await Promise.all([api("/applications"), api("/notifications/preferences"), api("/opportunities/recommendation-preferences")]);
+      setApplications(tracker); setPreferences(settings); setRecommendationPreferences(recommendationSettings);
     } catch (e:any) { setError(e.message); }
   }
   useEffect(() => { load(); }, []);
@@ -40,6 +42,13 @@ export default function Profile() {
 
   async function send(path:string) {
     try { const result = await api(path, { method:"POST" }); setNotice(result.sent ? `${result.sent} notification channel(s) processed` : result.reason); }
+    catch (e:any) { setError(e.message); }
+  }
+
+  async function updateRecommendationPreferences(patch:Partial<RecommendationPreferences>) {
+    const next = {...recommendationPreferences, ...patch};
+    setRecommendationPreferences(next);
+    try { await api("/opportunities/recommendation-preferences", {method:"PUT", body:JSON.stringify(next)}); setNotice("Recommendation preferences updated"); }
     catch (e:any) { setError(e.message); }
   }
 
@@ -72,6 +81,11 @@ export default function Profile() {
           <label className="check-label"><input type="checkbox" checked={preferences.telegram_enabled} onChange={e=>updatePreferences({telegram_enabled:e.target.checked})} /> Telegram delivery</label>
           <label>Telegram chat ID<input value={preferences.telegram_chat_id} onChange={e=>setPreferences({...preferences, telegram_chat_id:e.target.value})} onBlur={()=>updatePreferences({telegram_chat_id:preferences.telegram_chat_id})} placeholder="Connect your bot chat ID" /></label>
           <label>Digest hour<input type="number" min="0" max="23" value={preferences.digest_hour} onChange={e=>updatePreferences({digest_hour:Number(e.target.value)})} /></label>
+        </div>
+        <div className="card settings-card"><p className="eyebrow">RECOMMENDATIONS</p><h2>Professional preferences</h2>
+          <label>Target companies<input value={recommendationPreferences.target_companies.join(", ")} onChange={e=>setRecommendationPreferences({...recommendationPreferences, target_companies:e.target.value.split(",").map(item=>item.trim()).filter(Boolean)})} onBlur={()=>updateRecommendationPreferences({target_companies:recommendationPreferences.target_companies})} placeholder="Google, Microsoft, Atlassian" /></label>
+          <label>Target seniority<select value={recommendationPreferences.target_seniority} onChange={e=>updateRecommendationPreferences({target_seniority:e.target.value})}><option value="auto">Auto from experience</option><option value="intern">Intern</option><option value="junior">Junior</option><option value="mid">Mid-level</option><option value="senior">Senior</option><option value="lead">Lead</option></select></label>
+          <p className="muted settings-note">Your years of experience and target seniority now influence ranking for experienced-hire recommendations.</p>
         </div>
         <div className="card settings-card"><p className="eyebrow">AUTOMATIONS</p><h2>Send a test digest</h2><p className="muted">Preview or send the alerts generated from your tracked opportunities. Without credentials, sends are recorded as previews.</p>
           <div className="opportunity-actions"><button onClick={()=>send("/notifications/deadline-alerts/send")}>Send deadline alerts</button><button className="secondary-button" onClick={()=>send("/notifications/digest/send")}>Send daily digest</button></div>

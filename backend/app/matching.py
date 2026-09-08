@@ -162,12 +162,39 @@ def _item_similarity(left, right):
     return _token_similarity(opportunity_text(left), opportunity_text(right))
 
 
-def candidate_generation(profile, user, opportunities, interactions, limit=100):
+def learned_preference_score(op, positive_items):
+    if not positive_items:
+        return 0.0
+    score = 0.0
+    for item in positive_items:
+        if normalize_text(item.organization) == normalize_text(op.organization):
+            score = max(score, 1.0)
+        elif normalize_text(item.opportunity_type) == normalize_text(op.opportunity_type):
+            score = max(score, 0.6)
+        elif normalize_text(item.role) == normalize_text(op.role):
+            score = max(score, 0.4)
+    return score
+
+
+def seniority_compatibility(op, profile, preference=None):
+    experience = profile.years_experience or 0
+    target = getattr(preference, "target_seniority", "auto") if preference else "auto"
+    if target == "auto":
+        target = "intern" if experience == 0 else "junior" if experience <= 2 else "mid" if experience <= 5 else "senior"
+    ranges = {"intern": (0, 1), "junior": (0, 3), "mid": (2, 6), "senior": (5, 20), "lead": (8, 30)}
+    minimum, maximum = ranges.get(target, (0, 30))
+    opportunity_min = op.experience_min or 0
+    opportunity_max = op.experience_max or max(opportunity_min, 30)
+    return 1.0 if opportunity_max >= minimum and opportunity_min <= maximum else 0.0
+
+
+def candidate_generation(profile, user, opportunities, interactions, preference=None, limit=100):
     """Generate candidates from content, history similarity, and global popularity."""
     matrix = build_interaction_matrix(interactions)
     user_history = matrix.get(user.id, {})
     positive_history = {item_id: weight for item_id, weight in user_history.items() if weight > 0}
     opportunities_by_id = {op.id: op for op in opportunities}
+    positive_items = [opportunities_by_id[item_id] for item_id, weight in positive_history.items() if item_id in opportunities_by_id and weight > 0]
     popularity = {}
     for user_items in matrix.values():
         for item_id, weight in user_items.items():
@@ -184,6 +211,10 @@ def candidate_generation(profile, user, opportunities, interactions, limit=100):
             if history_item and item_id != op.id:
                 history_score = max(history_score, min(1.0, weight / 4.0) * _item_similarity(op, history_item))
         popularity_score = popularity.get(op.id, 0.0) / max_popularity
+        learned_score = learned_preference_score(op, positive_items)
+        target_companies = csv_values(preference.target_companies) if preference else set()
+        company_score = 1.0 if target_companies and normalize_text(op.organization) in target_companies else 0.0
+        seniority_score = seniority_compatibility(op, profile, preference)
         sources = []
         if content_score > 0:
             sources.append("content")
@@ -194,11 +225,15 @@ def candidate_generation(profile, user, opportunities, interactions, limit=100):
         if cold_start:
             sources = ["cold_start"]
         candidate_score = max(content_score, history_score, popularity_score * 0.5)
+        candidate_score = max(candidate_score, learned_score * 0.7, company_score * 0.9)
         candidates.append({
             "opportunity": op,
             "content_score": content_score,
             "interaction_score": history_score,
             "popularity_score": popularity_score,
+            "learned_preference_score": learned_score,
+            "target_company_score": company_score,
+            "seniority_score": seniority_score,
             "candidate_sources": sources,
             "candidate_score": candidate_score,
         })
@@ -213,10 +248,13 @@ def rank_candidates(candidates, score_function):
     for candidate in candidates:
         base_score, reasons, semantic_score = score_function(candidate["opportunity"])
         rank_score = (
-            0.55 * (base_score / 100)
-            + 0.25 * candidate["content_score"]
+            0.40 * (base_score / 100)
+            + 0.20 * candidate["content_score"]
             + 0.15 * candidate["interaction_score"]
             + 0.05 * candidate["popularity_score"]
+            + 0.10 * candidate.get("learned_preference_score", 0)
+            + 0.05 * candidate.get("target_company_score", 0)
+            + 0.05 * candidate.get("seniority_score", 0)
         )
         candidate = {**candidate, "base_score": base_score, "rank_score": round(rank_score * 100),
                      "reasons": reasons, "semantic_score": semantic_score}

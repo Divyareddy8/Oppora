@@ -18,7 +18,8 @@ from ..matching import (
     semantic_similarity,
 )
 from ..models import Application, Interaction, Opportunity, SavedOpportunity, Skill
-from ..schemas import InteractionIn
+from ..models import RecommendationPreference
+from ..schemas import InteractionIn, RecommendationPreferenceIn
 
 router = APIRouter(prefix="/opportunities", tags=["opportunities"])
 
@@ -83,6 +84,18 @@ def score_opportunity(op, profile, user):
         reasons.append("Matches women-focused preference")
 
     return min(score, 100), reasons, round(semantic_score * 100)
+
+
+def seniority_score(op, profile, preference):
+    experience = profile.years_experience or 0
+    target = (preference.target_seniority if preference else "auto")
+    if target == "auto":
+        target = "intern" if experience == 0 else "junior" if experience <= 2 else "mid" if experience <= 5 else "senior"
+    ranges = {"intern": (0, 1), "junior": (0, 3), "mid": (2, 6), "senior": (5, 20), "lead": (8, 30)}
+    minimum, maximum = ranges.get(target, (0, 30))
+    opportunity_min = op.experience_min or 0
+    opportunity_max = op.experience_max or max(opportunity_min, 30)
+    return 1.0 if opportunity_max >= minimum and opportunity_min <= maximum else 0.0
 
 
 def serialize(op, score=None, reasons=None, semantic_score=None, recommendation=None):
@@ -154,9 +167,10 @@ def personalized_feed(
     user=Depends(get_current_user),
 ):
     profile = user.profile
+    preference = user.recommendation_preferences
     opportunities = db.query(Opportunity).all()
     interactions = db.query(Interaction).all()
-    candidates = candidate_generation(profile, user, opportunities, interactions)
+    candidates = candidate_generation(profile, user, opportunities, interactions, preference)
     ranked = rank_candidates(candidates, lambda op: score_opportunity(op, profile, user))
     seen = set()
     results = []
@@ -184,11 +198,12 @@ def recommendation_diagnostics(
     user=Depends(get_current_user),
 ):
     profile = user.profile
+    preference = user.recommendation_preferences
     opportunities = db.query(Opportunity).all()
     interactions = db.query(Interaction).all()
     matrix = build_interaction_matrix(interactions)
     ranked = rank_candidates(
-        candidate_generation(profile, user, opportunities, interactions),
+        candidate_generation(profile, user, opportunities, interactions, preference),
         lambda op: score_opportunity(op, profile, user),
     )
     recommended_ids = [item["opportunity"].id for item in ranked]
@@ -236,6 +251,28 @@ def record_interaction(
     db.add(Interaction(user_id=user.id, opportunity_id=opportunity_id, event_type=data.event_type))
     db.commit()
     return {"recorded": True, "event_type": data.event_type}
+
+
+@router.get("/recommendation-preferences")
+def get_recommendation_preferences(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    preference = user.recommendation_preferences
+    if not preference:
+        preference = RecommendationPreference(user_id=user.id)
+        db.add(preference)
+        db.commit()
+    return {"target_companies": [item for item in (preference.target_companies or "").split(",") if item], "target_seniority": preference.target_seniority}
+
+
+@router.put("/recommendation-preferences")
+def update_recommendation_preferences(data: RecommendationPreferenceIn, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    preference = user.recommendation_preferences
+    if not preference:
+        preference = RecommendationPreference(user_id=user.id)
+        db.add(preference)
+    preference.target_companies = ",".join(item.strip() for item in data.target_companies if item.strip())
+    preference.target_seniority = data.target_seniority
+    db.commit()
+    return {"updated": True}
 
 
 @router.get("/{opportunity_id}")

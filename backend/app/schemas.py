@@ -82,6 +82,21 @@ class NotificationPreferenceIn(BaseModel):
     digest_hour: int = 9
 
 
+class RecommendationPreferenceIn(BaseModel):
+    target_companies: List[str] = []
+    target_seniority: Literal["auto", "intern", "junior", "mid", "senior", "lead"] = "auto"
+
+
+class UserReportIn(BaseModel):
+    reason: Literal["incorrect", "expired", "spam", "unsafe", "duplicate", "other"]
+    details: str = ""
+
+
+class ModerationIn(BaseModel):
+    status: Literal["pending", "approved", "rejected", "needs_review"]
+    reason: str = ""
+
+
 class OpportunityCreate(BaseModel):
     title: str
     organization: str

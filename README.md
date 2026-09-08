@@ -46,6 +46,12 @@ Notification endpoints include:
 
 Sends are recorded as `preview` when credentials are absent, which keeps local development safe. Configure real delivery with `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, `TELEGRAM_BOT_TOKEN`, and a Telegram chat ID saved in notification preferences. A production deployment should call the send endpoints from a daily scheduler or worker.
 
+## Phases 4-6
+
+The recommendation profile now supports target companies and explicit seniority (`auto`, intern, junior, mid, senior, lead). Years of experience already live on the profile and are used for seniority compatibility. Click, save, and apply events feed learned organization, role, and opportunity-type preferences in the learning-to-rank score.
+
+Phase 6 governance endpoints include user reports, admin moderation, source health checks, and analytics. Set `ADMIN_EMAILS` to a comma-separated list before using `/admin/reports`, `/admin/opportunities/{id}/moderation`, `/admin/opportunities/{id}/source-health`, or `/admin/analytics`.
+
 ## Stack
 
 Frontend:
