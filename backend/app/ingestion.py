@@ -11,6 +11,7 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from .models import Opportunity
+from .matching import infer_eligible_branches
 
 
 SOURCE_CONFIG = {
@@ -82,6 +83,7 @@ def normalize_job(provider, board, raw):
         "opportunity_type": "Job",
         "role": title,
         "description": description[:5000],
+        "eligible_branches": ",".join(infer_eligible_branches(title, description)),
         "source_url": url,
         "source_name": f"{board} Careers ({provider.title()})",
         "deadline": _date(raw.get("deadline")),

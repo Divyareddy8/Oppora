@@ -85,6 +85,7 @@ class Opportunity(Base):
     experience_min = Column(Integer, default=0)
     experience_max = Column(Integer, default=0)
     company_tier = Column(String(10), default="Unrated")
+    eligible_branches = Column(String(30), default="")
     verified = Column(Boolean, default=False)
     women_focused = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)

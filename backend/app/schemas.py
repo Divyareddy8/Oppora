@@ -53,6 +53,7 @@ class OpportunityOut(BaseModel):
     experience_min: int
     experience_max: int
     company_tier: str
+    eligible_branches: List[Literal["CSE", "ECE", "AIML"]] = []
     inferred_company_tier: str = "Unrated"
     verified: bool
     women_focused: bool
@@ -110,6 +111,7 @@ class OpportunityCreate(BaseModel):
     experience_min: int = 0
     experience_max: int = 0
     company_tier: str = "Unrated"
+    eligible_branches: List[Literal["CSE", "ECE", "AIML"]] = []
     verified: bool = False
     women_focused: bool = False
     skills: List[str] = []

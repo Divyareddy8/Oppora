@@ -9,11 +9,12 @@ type Opportunity = {
   deadline:string|null; location:string; company_tier:string; verified:boolean;
   inferred_company_tier:string; women_focused:boolean; skills:string[];
   experience_min:number; experience_max:number;
+  eligible_branches:string[];
   match_score:number|null; semantic_score:number|null; reasons:string[];
 };
 
 type Filters = {
-  search:string; type:string; tier:string; audience:string; role:string; source:string;
+  search:string; type:string; tier:string; audience:string; role:string; source:string; branches:string[];
   experience:string; skill:string; location:string; verifiedOnly:boolean;
 };
 
@@ -29,9 +30,10 @@ export default function Feed() {
   const [skill, setSkill] = useState("");
   const [location, setLocation] = useState("");
   const [source, setSource] = useState("");
+  const [branches, setBranches] = useState<string[]>([]);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<Filters>({
-    search:"", type:"", tier:"", audience:"all", role:"", source:"", experience:"",
+    search:"", type:"", tier:"", audience:"all", role:"", source:"", branches:[], experience:"",
     skill:"", location:"", verifiedOnly:false,
   });
   const [error, setError] = useState("");
@@ -68,22 +70,27 @@ export default function Feed() {
       : new RegExp(appliedFilters.role === "SDE" ? "sde|software|developer" : "mle|machine learning", "i").test(roleText));
     const skillMatches = !appliedFilters.skill || opportunitySkills.some(item => item.includes(appliedFilters.skill.toLowerCase()));
     const locationMatches = !appliedFilters.location || op.location.toLowerCase().includes(appliedFilters.location.toLowerCase());
+    const branchMatches = appliedFilters.branches.length === 0 || appliedFilters.branches.some(branch => op.eligible_branches.includes(branch));
     return (!appliedFilters.search || haystack.includes(appliedFilters.search.toLowerCase()))
       && (!appliedFilters.type || op.opportunity_type === appliedFilters.type)
       && (!appliedFilters.tier || (op.inferred_company_tier || op.company_tier) === appliedFilters.tier)
       && audienceMatches && roleMatches && matchesExperience(op) && skillMatches
-      && locationMatches && (!appliedFilters.source || op.source_name === appliedFilters.source)
+      && locationMatches && branchMatches && (!appliedFilters.source || op.source_name === appliedFilters.source)
       && (!appliedFilters.verifiedOnly || op.verified);
   });
 
   function applyFilters() {
-    setAppliedFilters({ search, type, tier, audience, role, source, experience, skill, location, verifiedOnly });
+    setAppliedFilters({ search, type, tier, audience, role, source, branches, experience, skill, location, verifiedOnly });
   }
 
   function clearFilters() {
-    setSearch(""); setType(""); setTier(""); setRole(""); setSource(""); setExperience("");
+    setSearch(""); setType(""); setTier(""); setRole(""); setSource(""); setBranches([]); setExperience("");
     setSkill(""); setLocation(""); setVerifiedOnly(false); setAudience("all");
-    setAppliedFilters({ search:"", type:"", tier:"", audience:"all", role:"", source:"", experience:"", skill:"", location:"", verifiedOnly:false });
+    setAppliedFilters({ search:"", type:"", tier:"", audience:"all", role:"", source:"", branches:[], experience:"", skill:"", location:"", verifiedOnly:false });
+  }
+
+  function toggleBranch(branch:string) {
+    setBranches(current => current.includes(branch) ? current.filter(item => item !== branch) : [...current, branch]);
   }
 
   async function save(id:number) {
@@ -135,6 +142,10 @@ export default function Feed() {
           <label>Source
             <select value={source} onChange={e=>setSource(e.target.value)}><option value="">All official sources</option>{Array.from(new Set(items.map(item=>item.source_name))).sort().map(item=><option key={item}>{item}</option>)}</select>
           </label>
+          <fieldset>
+            <legend>Branch</legend>
+            {([['CSE','Computer Science Engineering'], ['ECE','Electronics and Communication Engineering'], ['AIML','Artificial Intelligence and Machine Learning']] as const).map(([value, label]) => <label className="check-label" key={value}><input type="checkbox" checked={branches.includes(value)} onChange={()=>toggleBranch(value)} /> {value} <span className="muted">{label}</span></label>)}
+          </fieldset>
           <label>Opportunity type
             <select value={type} onChange={e=>setType(e.target.value)}><option value="">All types</option><option>Internship</option><option>Research</option><option>Hackathon</option><option>Scholarship</option><option>Open Source</option></select>
           </label>
@@ -155,6 +166,7 @@ export default function Feed() {
                 <h2>{op.title}</h2>
                 <p><strong>{op.organization}</strong> · {op.role}</p>
                 <p className="muted">{op.location} · {op.experience_min === op.experience_max ? `${op.experience_min} yrs` : `${op.experience_min}-${op.experience_max} yrs`} · Tier {op.inferred_company_tier || op.company_tier}</p>
+                {op.eligible_branches.length > 0 && <div>{op.eligible_branches.map(branch=><span className="badge" key={branch}>{branch}</span>)}</div>}
                 <div>{op.verified && <span className="badge">✓ Verified</span>}{op.women_focused && <span className="badge">Women-focused</span>}</div>
                 <p>{op.description}</p>
                 <div>{op.skills.map(s=><span className="badge" key={s}>{s}</span>)}</div>

@@ -15,6 +15,7 @@ INTERACTION_WEIGHTS = {
     "apply": 4.0,
     "dismiss": -2.0,
 }
+ELIGIBLE_BRANCHES = ("CSE", "ECE", "AIML")
 
 
 def normalize_text(value):
@@ -23,6 +24,24 @@ def normalize_text(value):
 
 def csv_values(value):
     return {normalize_text(item) for item in (value or "").split(",") if normalize_text(item)}
+
+
+def normalize_branches(value):
+    values = value if isinstance(value, (list, tuple, set)) else (value or "").split(",")
+    return [branch for branch in ELIGIBLE_BRANCHES if branch in {str(item).strip().upper() for item in values}]
+
+
+def infer_eligible_branches(title, description):
+    """Infer only branches explicitly supported by eligibility or role text."""
+    text = f"{title or ''} {description or ''}".lower()
+    branches = set()
+    if re.search(r"\b(cse|computer science(?: engineering)?|computer engineering)\b", text):
+        branches.add("CSE")
+    if re.search(r"\b(ece|electronics(?: and communication| & communication)?(?: engineering)?|electronics engineering)\b", text):
+        branches.add("ECE")
+    if re.search(r"\b(aiml|ai/ml|artificial intelligence|machine learning)\b", text):
+        branches.add("AIML")
+    return [branch for branch in ELIGIBLE_BRANCHES if branch in branches]
 
 
 def opportunity_fingerprint(op):

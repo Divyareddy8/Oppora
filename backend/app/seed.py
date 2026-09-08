@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from .database import Base, SessionLocal, engine
+from .matching import infer_eligible_branches, normalize_branches
 from .models import Opportunity, Skill, User, Profile
 from .auth import hash_password
 
@@ -38,14 +39,15 @@ def get_skill(name):
 
 def add_opportunity(
     title, org, typ, role, skills, tier, deadline, location,
-    source_name, source_url, verified=True, women=False, experience_min=0, experience_max=2
+    source_name, source_url, verified=True, women=False, experience_min=0, experience_max=2, eligible_branches=None
 ):
+    description = f"{title} by {org}. Build experience in {role}."
     op = Opportunity(
         title=title,
         organization=org,
         opportunity_type=typ,
         role=role,
-        description=f"{title} by {org}. Build experience in {role}.",
+        description=description,
         source_url=source_url,
         source_name=source_name,
         deadline=deadline,
@@ -55,6 +57,7 @@ def add_opportunity(
         women_focused=women,
         experience_min=experience_min,
         experience_max=experience_max,
+        eligible_branches=",".join(normalize_branches(eligible_branches or infer_eligible_branches(title, description))),
     )
     op.skills = [get_skill(s) for s in skills]
     db.add(op)
@@ -63,7 +66,7 @@ today = date.today()
 add_opportunity(
     "Software Engineering Internship", "Google", "Internship", "SDE",
     ["Python", "C++", "DSA"], "S", today + timedelta(days=12),
-    "Bangalore/Remote", "Google Careers", "https://www.google.com/about/careers/applications/"
+    "Bangalore/Remote", "Google Careers", "https://www.google.com/about/careers/applications/", eligible_branches=["CSE", "AIML"]
 )
 add_opportunity(
     "Backend Engineer", "Swiggy", "Job", "Software Engineer",
@@ -78,7 +81,7 @@ add_opportunity(
 add_opportunity(
     "Machine Learning Engineer", "Microsoft", "Job", "MLE",
     ["Python", "Azure", "Machine Learning"], "S", today + timedelta(days=45),
-    "Hyderabad", "Microsoft Careers", "https://careers.microsoft.com/", experience_min=2, experience_max=6
+    "Hyderabad", "Microsoft Careers", "https://careers.microsoft.com/", experience_min=2, experience_max=6, eligible_branches=["CSE", "AIML"]
 )
 add_opportunity(
     "Cloud Software Engineer", "Amazon", "Job", "Software Engineer",
@@ -121,6 +124,16 @@ add_opportunity(
     "Bangalore", "Atlassian Careers", "https://www.atlassian.com/company/careers", experience_min=0, experience_max=1
 )
 add_opportunity(
+    "Embedded Systems Intern", "Qualcomm", "Internship", "Embedded Engineer",
+    ["C", "C++", "Embedded Systems"], "S", today + timedelta(days=22),
+    "Hyderabad", "Qualcomm Careers", "https://www.qualcomm.com/company/careers", experience_min=0, experience_max=1, eligible_branches=["ECE"]
+)
+add_opportunity(
+    "AI Hardware Intern", "NVIDIA", "Internship", "AI Hardware Engineer",
+    ["C++", "CUDA", "Machine Learning"], "S", today + timedelta(days=24),
+    "Bangalore", "NVIDIA Careers", "https://www.nvidia.com/en-us/about-nvidia/careers/", experience_min=0, experience_max=1, eligible_branches=["ECE", "AIML"]
+)
+add_opportunity(
     "Associate Software Engineer", "Walmart Global Tech", "Job", "SDE",
     ["Java", "Python", "Cloud"], "A", today + timedelta(days=34),
     "Chennai", "Walmart Careers", "https://careers.walmart.com/", experience_min=0, experience_max=3
@@ -128,7 +141,7 @@ add_opportunity(
 add_opportunity(
     "AI/ML Research Internship", "IISc", "Research", "Research",
     ["Python", "PyTorch", "Machine Learning"], "S", today + timedelta(days=18),
-    "Bangalore", "IISc", "https://iisc.ac.in/"
+    "Bangalore", "IISc", "https://iisc.ac.in/", eligible_branches=["CSE", "AIML"]
 )
 add_opportunity(
     "AI Innovation Hackathon", "Microsoft", "Hackathon", "SDE",
