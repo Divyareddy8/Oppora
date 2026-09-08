@@ -12,8 +12,9 @@ export async function api(path: string, options: RequestInit = {}) {
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const res = await fetch(`${API}${path}`, { ...options, headers });
-  const data = await res.json();
+  const contentType = res.headers.get("content-type") || "";
+  const data = contentType.includes("application/json") ? await res.json() : null;
 
-  if (!res.ok) throw new Error(data.detail || "Request failed");
+  if (!res.ok) throw new Error(data?.detail || `Request failed (${res.status})`);
   return data;
 }
