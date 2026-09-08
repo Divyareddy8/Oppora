@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..database import get_db
-from ..models import Profile, Skill
+from ..models import Opportunity, Profile, SavedOpportunity, Skill
 from ..schemas import ProfileIn
+from .opportunities import serialize
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -62,3 +63,31 @@ def update_profile(data: ProfileIn, user=Depends(get_current_user), db: Session 
 
     db.commit()
     return {"message": "Profile updated"}
+
+
+@router.get("/bookmarks")
+def get_bookmarks(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    saved = (
+        db.query(Opportunity)
+        .join(SavedOpportunity, SavedOpportunity.opportunity_id == Opportunity.id)
+        .filter(SavedOpportunity.user_id == user.id)
+        .order_by(SavedOpportunity.created_at.desc())
+        .all()
+    )
+    return [serialize(op) for op in saved]
+
+
+@router.delete("/bookmarks/{opportunity_id}")
+def remove_bookmark(opportunity_id: int, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    saved = (
+        db.query(SavedOpportunity)
+        .filter(
+            SavedOpportunity.user_id == user.id,
+            SavedOpportunity.opportunity_id == opportunity_id,
+        )
+        .first()
+    )
+    if saved:
+        db.delete(saved)
+        db.commit()
+    return {"removed": True}

@@ -12,6 +12,11 @@ type Opportunity = {
   match_score:number|null; semantic_score:number|null; reasons:string[];
 };
 
+type Filters = {
+  search:string; type:string; tier:string; audience:string; role:string;
+  experience:string; skill:string; location:string; verifiedOnly:boolean;
+};
+
 export default function Feed() {
   const [items, setItems] = useState<Opportunity[]>([]);
   const [profile, setProfile] = useState<any>(null);
@@ -24,6 +29,10 @@ export default function Feed() {
   const [skill, setSkill] = useState("");
   const [location, setLocation] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<Filters>({
+    search:"", type:"", tier:"", audience:"all", role:"", experience:"",
+    skill:"", location:"", verifiedOnly:false,
+  });
   const [error, setError] = useState("");
 
   async function loadFeed() {
@@ -35,15 +44,14 @@ export default function Feed() {
     loadFeed();
     api("/profile").then(data => {
       setProfile(data);
-      setAudience(data.user_type || "all");
     }).catch(() => {});
   }, []);
 
   function matchesExperience(op: Opportunity) {
-    if (!experience) return true;
-    if (experience === "0") return op.experience_min === 0 && op.experience_max <= 1;
-    if (experience === "1-3") return op.experience_max >= 1 && op.experience_min <= 3;
-    if (experience === "3-5") return op.experience_max >= 3 && op.experience_min <= 5;
+    if (!appliedFilters.experience) return true;
+    if (appliedFilters.experience === "0") return op.experience_min === 0 && op.experience_max <= 1;
+    if (appliedFilters.experience === "1-3") return op.experience_max >= 1 && op.experience_min <= 3;
+    if (appliedFilters.experience === "3-5") return op.experience_max >= 3 && op.experience_min <= 5;
     return op.experience_max >= 5;
   }
 
@@ -51,24 +59,29 @@ export default function Feed() {
     const haystack = `${op.title} ${op.organization} ${op.description} ${op.role}`.toLowerCase();
     const roleText = op.role.toLowerCase();
     const opportunitySkills = op.skills.map(item => item.toLowerCase());
-    const audienceMatches = audience === "all"
-      || (audience === "student" && op.experience_max <= 1)
-      || (audience === "professional" && op.experience_max > 1);
-    const roleMatches = !role || (role === "Other"
+    const audienceMatches = appliedFilters.audience === "all"
+      || (appliedFilters.audience === "student" && op.experience_max <= 1)
+      || (appliedFilters.audience === "professional" && op.experience_max > 1);
+    const roleMatches = !appliedFilters.role || (appliedFilters.role === "Other"
       ? !/(sde|software|developer|machine learning|mle|data scientist)/i.test(roleText)
-      : new RegExp(role === "SDE" ? "sde|software|developer" : "mle|machine learning", "i").test(roleText));
-    const skillMatches = !skill || opportunitySkills.some(item => item.includes(skill.toLowerCase()));
-    const locationMatches = !location || op.location.toLowerCase().includes(location.toLowerCase());
-    return (!search || haystack.includes(search.toLowerCase()))
-      && (!type || op.opportunity_type === type)
-      && (!tier || (op.inferred_company_tier || op.company_tier) === tier)
+      : new RegExp(appliedFilters.role === "SDE" ? "sde|software|developer" : "mle|machine learning", "i").test(roleText));
+    const skillMatches = !appliedFilters.skill || opportunitySkills.some(item => item.includes(appliedFilters.skill.toLowerCase()));
+    const locationMatches = !appliedFilters.location || op.location.toLowerCase().includes(appliedFilters.location.toLowerCase());
+    return (!appliedFilters.search || haystack.includes(appliedFilters.search.toLowerCase()))
+      && (!appliedFilters.type || op.opportunity_type === appliedFilters.type)
+      && (!appliedFilters.tier || (op.inferred_company_tier || op.company_tier) === appliedFilters.tier)
       && audienceMatches && roleMatches && matchesExperience(op) && skillMatches
-      && locationMatches && (!verifiedOnly || op.verified);
+      && locationMatches && (!appliedFilters.verifiedOnly || op.verified);
   });
+
+  function applyFilters() {
+    setAppliedFilters({ search, type, tier, audience, role, experience, skill, location, verifiedOnly });
+  }
 
   function clearFilters() {
     setSearch(""); setType(""); setTier(""); setRole(""); setExperience("");
-    setSkill(""); setLocation(""); setVerifiedOnly(false);
+    setSkill(""); setLocation(""); setVerifiedOnly(false); setAudience("all");
+    setAppliedFilters({ search:"", type:"", tier:"", audience:"all", role:"", experience:"", skill:"", location:"", verifiedOnly:false });
   }
 
   async function save(id:number) {
@@ -117,10 +130,11 @@ export default function Feed() {
             <select value={tier} onChange={e=>setTier(e.target.value)}><option value="">All tiers</option><option>S</option><option>A</option><option>B</option><option>C</option></select>
           </label>
           <label className="check-label"><input type="checkbox" checked={verifiedOnly} onChange={e=>setVerifiedOnly(e.target.checked)} /> Verified sources only</label>
+          <button className="apply-button" onClick={applyFilters}>Apply filters</button>
         </aside>
 
         <section className="feed-results">
-          <div className="results-bar"><strong>{filteredItems.length} opportunities</strong><span className="muted">Ranked for you · {audience === "professional" ? "Working professional" : audience === "student" ? "Student" : "All profiles"}</span></div>
+          <div className="results-bar"><strong>{filteredItems.length} opportunities</strong><span className="muted">Ranked for you · {appliedFilters.audience === "professional" ? "Working professional" : appliedFilters.audience === "student" ? "Student" : "All profiles"}</span></div>
           {filteredItems.length === 0 && <div className="empty-state"><h2>No matches yet</h2><p className="muted">Try widening your filters or clearing the search.</p></div>}
           <div className="grid">
             {filteredItems.map(op => (
