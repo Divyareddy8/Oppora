@@ -3,22 +3,8 @@ import re
 from collections import Counter
 from functools import lru_cache
 
+from .company_catalog import COMPANY_DIRECTORY, KNOWN_COMPANY_TIERS
 
-KNOWN_COMPANY_TIERS = {
-    "google": "S",
-    "microsoft": "S",
-    "amazon": "S",
-    "meta": "S",
-    "apple": "S",
-    "iit": "S",
-    "iisc": "S",
-    "isro": "S",
-    "drdo": "S",
-    "adobe": "A",
-    "ibm": "A",
-    "intel": "A",
-    "oracle": "A",
-}
 
 TOKEN_RE = re.compile(r"[a-z0-9+#.]+", re.IGNORECASE)
 
@@ -54,7 +40,7 @@ def inferred_company_tier(op):
         return current
 
     organization = normalize_text(op.organization)
-    for name, tier in KNOWN_COMPANY_TIERS.items():
+    for name, tier in sorted(KNOWN_COMPANY_TIERS.items(), key=lambda item: -len(item[0])):
         if name in organization:
             return tier
     return "Unrated"

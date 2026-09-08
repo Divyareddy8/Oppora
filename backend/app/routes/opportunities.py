@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
+from ..company_catalog import COMPANY_DIRECTORY
 from ..database import get_db
 from ..matching import (
     _sentence_model,
@@ -189,6 +190,14 @@ def personalized_feed(
             {**recommendation, "cold_start": cold_start},
         ))
     return results
+
+
+@router.get("/companies")
+def company_directory(tier: str = ""):
+    companies = list(COMPANY_DIRECTORY.values())
+    if tier:
+        companies = [company for company in companies if company["tier"].lower() == tier.lower()]
+    return sorted(companies, key=lambda company: (company["tier"], company["name"].lower()))
 
 
 @router.get("/recommendation-diagnostics")
