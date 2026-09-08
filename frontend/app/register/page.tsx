@@ -25,17 +25,18 @@ export default function Register() {
   }
 
   return (
-    <main className="container">
-      <div className="card" style={{maxWidth:450, margin:"40px auto"}}>
-        <h1>Create account</h1>
-        <p className="muted">Start with your Gmail and password. You can add optional filters later.</p>
+    <main className="auth-page">
+      <section className="auth-card">
+        <a className="auth-brand" href="/">Oppora</a>
+        <div className="auth-heading"><p className="eyebrow">GET STARTED</p><h1>Create your account.</h1><p className="muted">Start with your Gmail and password. Complete your profile after signing in.</p></div>
         <form onSubmit={submit}>
-          <label>Gmail address<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@gmail.com" /></label>
-          <label>Password<input type="password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
+          <label htmlFor="email">Gmail address<input id="email" type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@gmail.com" /></label>
+          <label htmlFor="password">Password<input id="password" type="password" autoComplete="new-password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
           {error && <p className="error">{error}</p>}
-          <button>Create account and browse</button>
+          <button className="auth-submit">Create account and browse</button>
         </form>
-      </div>
+        <p className="auth-switch muted">Already have an account? <a href="/login">Sign in</a></p>
+      </section>
     </main>
   );
 }

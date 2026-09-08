@@ -19,7 +19,7 @@ from ..matching import (
     recall_at_k,
     semantic_similarity,
 )
-from ..models import Application, Interaction, Opportunity, SavedOpportunity, Skill
+from ..models import Application, Interaction, Opportunity, SavedOpportunity
 from ..models import RecommendationPreference
 from ..schemas import InteractionIn, RecommendationPreferenceIn
 
@@ -86,18 +86,6 @@ def score_opportunity(op, profile, user):
         reasons.append("Matches women-focused preference")
 
     return min(score, 100), reasons, round(semantic_score * 100)
-
-
-def seniority_score(op, profile, preference):
-    experience = profile.years_experience or 0
-    target = (preference.target_seniority if preference else "auto")
-    if target == "auto":
-        target = "intern" if experience == 0 else "junior" if experience <= 2 else "mid" if experience <= 5 else "senior"
-    ranges = {"intern": (0, 1), "junior": (0, 3), "mid": (2, 6), "senior": (5, 20), "lead": (8, 30)}
-    minimum, maximum = ranges.get(target, (0, 30))
-    opportunity_min = op.experience_min or 0
-    opportunity_max = op.experience_max or max(opportunity_min, 30)
-    return 1.0 if opportunity_max >= minimum and opportunity_min <= maximum else 0.0
 
 
 def serialize(op, score=None, reasons=None, semantic_score=None, recommendation=None):

@@ -25,17 +25,19 @@ export default function Login() {
   }
 
   return (
-    <main className="container">
-      <div className="card" style={{maxWidth:450, margin:"40px auto"}}>
-        <h1>Login</h1>
+    <main className="auth-page">
+      <section className="auth-card">
+        <a className="auth-brand" href="/">Oppora</a>
+        <div className="auth-heading"><p className="eyebrow">WELCOME BACK</p><h1>Find your next opportunity.</h1><p className="muted">Sign in to continue to your personalized feed.</p></div>
         <form onSubmit={submit}>
-          <label>Email<input value={email} onChange={e=>setEmail(e.target.value)} /></label>
-          <label>Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)} /></label>
+          <label htmlFor="email">Email<input id="email" type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)} /></label>
+          <label htmlFor="password">Password<input id="password" type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)} /></label>
           {error && <p className="error">{error}</p>}
-          <button>Login</button>
+          <button className="auth-submit">Login</button>
         </form>
-        <p className="muted">Demo: demo@student.com / password123</p>
-      </div>
+        <p className="auth-demo muted">Demo: demo@student.com / password123</p>
+        <p className="auth-switch muted">New to Oppora? <a href="/register">Create an account</a></p>
+      </section>
     </main>
   );
 }

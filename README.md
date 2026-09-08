@@ -9,6 +9,10 @@ Oppora is an opportunity discovery and application-tracking platform for student
 - Years-of-experience and seniority matching
 - Target-company preferences
 - Personalized opportunity feed with search and filters
+- Responsive login and registration pages
+- Branch eligibility filtering for CSE, ECE, and AIML
+- Company-tier filtering for S, A, B, and C opportunities
+- Location and official-source filters
 - Official-source coverage from seeded company portals across Bangalore, Hyderabad, Chennai, Mumbai, and Gurgaon
 - Skill, role, location, type, tier, and semantic matching
 - Content-based and interaction-based recommendations

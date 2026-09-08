@@ -50,14 +50,14 @@ label { display: block; margin-bottom: 14px; font-weight: 700; color: #343451; }
 .site-footer { padding: 18px 20px 26px; color: #777596; text-align: center; font-size: 12px; font-weight: 600; }
 .feed-header { margin-bottom: 26px; }
 .feed-header p { font-size: 16px; }
-.feed-header { display: flex; justify-content: space-between; align-items: end; gap: 24px; }
+.feed-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
 .eyebrow { color: var(--violet); font-size: 11px; font-weight: 800; letter-spacing: .12em; margin: 0 0 8px; }
 .feed-header h1 { margin-top: 0; }
 .profile-link { display: inline-flex; gap: 10px; align-items: center; color: #43349b; font-weight: 800; white-space: nowrap; }
 .profile-link span { font-size: 20px; }
 .feed-layout { display: grid; grid-template-columns: 244px minmax(0, 1fr); gap: 22px; align-items: start; }
 .filter-rail { position: sticky; top: 20px; background: rgba(255, 255, 255, .82); border: 1px solid var(--line); border-radius: 16px; padding: 18px; box-shadow: 0 12px 30px rgba(44, 39, 99, .08); }
-.filter-heading { display: flex; align-items: start; justify-content: space-between; margin-bottom: 20px; }
+.filter-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
 .filter-heading h3 { margin: 0; font-size: 21px; }
 .filter-heading .eyebrow { margin-bottom: 4px; }
 .text-button { padding: 2px 0; background: none; color: var(--violet); box-shadow: none; font-size: 12px; }
@@ -87,6 +87,17 @@ label { display: block; margin-bottom: 14px; font-weight: 700; color: #343451; }
 .settings-card h2 { margin-top: 0; }
 .settings-note { margin-top: 24px; font-size: 12px; }
 .success { color: #176b4a; background: #e9faf1; border-radius: 10px; padding: 10px 12px; }
+.auth-page { min-height: calc(100svh - 58px); display: grid; place-items: center; padding: 32px 20px 48px; }
+.auth-card { width: min(100%, 480px); padding: clamp(28px, 6vw, 52px); background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 24px 60px rgba(44,39,99,.14); }
+.auth-brand { display: inline-block; color: var(--navy); font: 700 24px "Space Grotesk", sans-serif; margin-bottom: 42px; }
+.auth-heading h1 { font-size: clamp(2rem, 7vw, 3.2rem); margin: 0 0 12px; }
+.auth-heading .muted { line-height: 1.55; margin-bottom: 28px; }
+.auth-card form { display: grid; gap: 2px; }
+.auth-submit { width: 100%; margin-top: 4px; padding: 13px 16px; }
+.auth-demo, .auth-switch { font-size: 13px; line-height: 1.5; text-align: center; }
+.auth-demo { margin: 22px 0 10px; }
+.auth-switch { margin: 0; }
+.auth-switch a { color: #44329b; font-weight: 700; }
 @media(max-width: 650px) { .settings-layout { grid-template-columns: 1fr; } .workspace-tabs { flex-direction: column; } }
 @media(max-width: 850px) { .feed-layout { grid-template-columns: 210px minmax(0, 1fr); gap: 14px; } .feed-results .grid { grid-template-columns: 1fr; } }
-@media(max-width: 650px) { .row { grid-template-columns: 1fr; } .container { padding: 20px 14px 40px; } nav { border-radius: 14px; } .hero { padding: 48px 24px; min-height: 420px; } .hero-actions { flex-direction: column; align-items: stretch; } .feed-header { align-items: start; flex-direction: column; gap: 8px; } .feed-layout { grid-template-columns: 1fr; } .filter-rail { position: static; } .segmented { grid-template-columns: repeat(3, 1fr); } .segmented button { text-align: center; padding: 8px 4px; } .results-bar { align-items: start; flex-direction: column; gap: 4px; } }
+@media(max-width: 650px) { .row { grid-template-columns: 1fr; } .container { padding: 20px 14px 40px; } nav { border-radius: 14px; } .hero { padding: 48px 24px; min-height: 420px; } .hero-actions { flex-direction: column; align-items: stretch; } .feed-header { align-items: flex-start; flex-direction: column; gap: 8px; } .feed-layout { grid-template-columns: 1fr; } .filter-rail { position: static; } .segmented { grid-template-columns: repeat(3, 1fr); } .segmented button { text-align: center; padding: 8px 4px; } .results-bar { align-items: flex-start; flex-direction: column; gap: 4px; } }
