@@ -22,6 +22,14 @@ KNOWN_COMPANY_TIERS = {
 
 TOKEN_RE = re.compile(r"[a-z0-9+#.]+", re.IGNORECASE)
 
+INTERACTION_WEIGHTS = {
+    "impression": 0.1,
+    "view": 1.0,
+    "save": 3.0,
+    "apply": 4.0,
+    "dismiss": -2.0,
+}
+
 
 def normalize_text(value):
     return " ".join(TOKEN_RE.findall((value or "").lower()))
@@ -128,3 +136,111 @@ def matching_skills(user, op):
         {user_skills[normalize_text(skill.name)] for skill in op.skills if normalize_text(skill.name) in user_skills},
         key=str.lower,
     )
+
+
+def interaction_weight(event_type):
+    return INTERACTION_WEIGHTS.get((event_type or "").lower(), 0.0)
+
+
+def build_interaction_matrix(interactions):
+    """Return a sparse user -> item -> weighted interaction matrix."""
+    matrix = {}
+    for interaction in interactions:
+        user_matrix = matrix.setdefault(interaction.user_id, {})
+        item_id = interaction.opportunity_id
+        user_matrix[item_id] = user_matrix.get(item_id, 0.0) + interaction_weight(interaction.event_type)
+    return matrix
+
+
+def _profile_signal(profile, user):
+    return any([
+        profile.current_role, profile.degree, profile.branch, profile.target_roles, user.skills,
+    ])
+
+
+def _item_similarity(left, right):
+    return _token_similarity(opportunity_text(left), opportunity_text(right))
+
+
+def candidate_generation(profile, user, opportunities, interactions, limit=100):
+    """Generate candidates from content, history similarity, and global popularity."""
+    matrix = build_interaction_matrix(interactions)
+    user_history = matrix.get(user.id, {})
+    positive_history = {item_id: weight for item_id, weight in user_history.items() if weight > 0}
+    opportunities_by_id = {op.id: op for op in opportunities}
+    popularity = {}
+    for user_items in matrix.values():
+        for item_id, weight in user_items.items():
+            popularity[item_id] = popularity.get(item_id, 0.0) + max(0.0, weight)
+    max_popularity = max(popularity.values(), default=1.0)
+    cold_start = not positive_history and not _profile_signal(profile, user)
+
+    candidates = []
+    for op in opportunities:
+        content_score = semantic_similarity(profile, user, op) if _profile_signal(profile, user) else 0.0
+        history_score = 0.0
+        for item_id, weight in positive_history.items():
+            history_item = opportunities_by_id.get(item_id)
+            if history_item and item_id != op.id:
+                history_score = max(history_score, min(1.0, weight / 4.0) * _item_similarity(op, history_item))
+        popularity_score = popularity.get(op.id, 0.0) / max_popularity
+        sources = []
+        if content_score > 0:
+            sources.append("content")
+        if history_score > 0:
+            sources.append("interaction")
+        if popularity_score > 0:
+            sources.append("popular")
+        if cold_start:
+            sources = ["cold_start"]
+        candidate_score = max(content_score, history_score, popularity_score * 0.5)
+        candidates.append({
+            "opportunity": op,
+            "content_score": content_score,
+            "interaction_score": history_score,
+            "popularity_score": popularity_score,
+            "candidate_sources": sources,
+            "candidate_score": candidate_score,
+        })
+
+    candidates.sort(key=lambda item: (-item["candidate_score"], item["opportunity"].id))
+    return candidates[:limit]
+
+
+def rank_candidates(candidates, score_function):
+    """Combine business/profile score with retrieval features into a 0-100 rank."""
+    ranked = []
+    for candidate in candidates:
+        base_score, reasons, semantic_score = score_function(candidate["opportunity"])
+        rank_score = (
+            0.55 * (base_score / 100)
+            + 0.25 * candidate["content_score"]
+            + 0.15 * candidate["interaction_score"]
+            + 0.05 * candidate["popularity_score"]
+        )
+        candidate = {**candidate, "base_score": base_score, "rank_score": round(rank_score * 100),
+                     "reasons": reasons, "semantic_score": semantic_score}
+        ranked.append(candidate)
+    ranked.sort(key=lambda item: (-item["rank_score"], item["opportunity"].id))
+    return ranked
+
+
+def precision_at_k(recommended_ids, relevant_ids, k):
+    if k <= 0:
+        return 0.0
+    recommended = recommended_ids[:k]
+    return sum(item_id in relevant_ids for item_id in recommended) / k
+
+
+def recall_at_k(recommended_ids, relevant_ids, k):
+    if not relevant_ids:
+        return 0.0
+    return sum(item_id in relevant_ids for item_id in recommended_ids[:k]) / len(relevant_ids)
+
+
+def ndcg_at_k(recommended_ids, relevant_ids, k):
+    recommended = recommended_ids[:k]
+    dcg = sum(1 / math.log2(position + 2) for position, item_id in enumerate(recommended) if item_id in relevant_ids)
+    ideal_hits = min(len(relevant_ids), k)
+    ideal_dcg = sum(1 / math.log2(position + 2) for position in range(ideal_hits))
+    return dcg / ideal_dcg if ideal_dcg else 0.0

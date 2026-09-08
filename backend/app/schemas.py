@@ -1,5 +1,5 @@
 from datetime import date
-from typing import List, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, EmailStr, ConfigDict
 
 
@@ -60,6 +60,10 @@ class OpportunityOut(BaseModel):
     match_score: Optional[int] = None
     semantic_score: Optional[int] = None
     reasons: List[str] = []
+
+
+class InteractionIn(BaseModel):
+    event_type: Literal["view", "save", "apply", "dismiss"]
 
 
 class OpportunityCreate(BaseModel):

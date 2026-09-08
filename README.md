@@ -20,6 +20,17 @@ Phase 2 adds:
 - Automatic company tier inference for known organizations
 - Semantic match scores and "Why this matches you" explanations in the feed
 
+## Recommendation engine
+
+The feed now uses a two-stage recommendation pipeline:
+
+1. Candidate generation combines profile/opportunity content similarity, similarity to positively interacted opportunities, and global popularity.
+2. Ranking blends the existing profile rules with retrieval signals and returns the ranking score and candidate sources for each item.
+
+`view`, `save`, `apply`, and `dismiss` events are stored in an interaction table and represented as a sparse user-item matrix. The authenticated `GET /opportunities/recommendation-diagnostics` endpoint exposes matrix dimensions, candidate sources, top-K IDs, cold-start state, and `Precision@K`, `Recall@K`, and `NDCG@K` over observed positive interactions.
+
+New users without meaningful profile data or interactions use popularity and deterministic recency-independent fallback retrieval. Content similarity uses token cosine similarity by default; installing `sentence-transformers` activates the existing MiniLM embedding backend automatically, leaving the engine ready for a future persisted embedding index.
+
 No deployment is included.
 
 ## Stack

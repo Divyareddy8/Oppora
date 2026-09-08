@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, String, Table, Text
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -28,6 +28,7 @@ class User(Base):
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     skills = relationship("Skill", secondary=user_skills, back_populates="users")
     saved = relationship("SavedOpportunity", back_populates="user", cascade="all, delete-orphan")
+    interactions = relationship("Interaction", back_populates="user", cascade="all, delete-orphan")
 
 
 class Profile(Base):
@@ -84,6 +85,7 @@ class Opportunity(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     skills = relationship("Skill", secondary=opportunity_skills, back_populates="opportunities")
+    interactions = relationship("Interaction", back_populates="opportunity", cascade="all, delete-orphan")
 
 
 class SavedOpportunity(Base):
@@ -95,3 +97,17 @@ class SavedOpportunity(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="saved")
+
+
+class Interaction(Base):
+    __tablename__ = "interactions"
+    __table_args__ = (Index("ix_interactions_user_opportunity", "user_id", "opportunity_id"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    opportunity_id = Column(Integer, ForeignKey("opportunities.id"), nullable=False)
+    event_type = Column(String(30), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="interactions")
+    opportunity = relationship("Opportunity", back_populates="interactions")

@@ -89,6 +89,11 @@ export default function Feed() {
     alert("Saved");
   }
 
+  async function recordView(id:number) {
+    try { await api(`/opportunities/${id}/interact`, {method:"POST", body:JSON.stringify({event_type:"view"})}); }
+    catch (_) {}
+  }
+
   return (
     <main className="container">
       <nav style={{margin:"-32px -20px 30px"}}>
@@ -150,7 +155,7 @@ export default function Feed() {
 
                 {op.reasons?.length > 0 && <div className="match-panel"><strong>Why this matches you:</strong><ul>{op.reasons.map(r=><li key={r}>{r}</li>)}</ul></div>}
 
-                <div className="opportunity-actions"><button onClick={()=>save(op.id)}>Save</button><a href={op.source_url} target="_blank" rel="noreferrer"><button className="secondary-button">View source</button></a></div>
+                <div className="opportunity-actions"><button onClick={()=>save(op.id)}>Save</button><a href={op.source_url} target="_blank" rel="noreferrer" onClick={()=>recordView(op.id)}><button className="secondary-button">View source</button></a></div>
               </article>
             ))}
           </div>

@@ -1,16 +1,24 @@
 from datetime import date
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..database import get_db
 from ..matching import (
+    _sentence_model,
+    build_interaction_matrix,
+    candidate_generation,
     inferred_company_tier,
     matching_skills,
+    ndcg_at_k,
     opportunity_fingerprint,
+    precision_at_k,
+    rank_candidates,
+    recall_at_k,
     semantic_similarity,
 )
-from ..models import Opportunity, SavedOpportunity, Skill
+from ..models import Interaction, Opportunity, SavedOpportunity, Skill
+from ..schemas import InteractionIn
 
 router = APIRouter(prefix="/opportunities", tags=["opportunities"])
 
@@ -77,7 +85,7 @@ def score_opportunity(op, profile, user):
     return min(score, 100), reasons, round(semantic_score * 100)
 
 
-def serialize(op, score=None, reasons=None, semantic_score=None):
+def serialize(op, score=None, reasons=None, semantic_score=None, recommendation=None):
     return {
         "id": op.id,
         "title": op.title,
@@ -99,6 +107,10 @@ def serialize(op, score=None, reasons=None, semantic_score=None):
         "match_score": score,
         "semantic_score": semantic_score,
         "reasons": reasons or [],
+        "rank_score": recommendation.get("rank_score") if recommendation else None,
+        "candidate_sources": recommendation.get("candidate_sources", []) if recommendation else [],
+        "interaction_score": recommendation.get("interaction_score", 0) if recommendation else 0,
+        "cold_start": recommendation.get("cold_start", False) if recommendation else False,
     }
 
 
@@ -143,19 +155,87 @@ def personalized_feed(
 ):
     profile = user.profile
     opportunities = db.query(Opportunity).all()
-
-    ranked = []
+    interactions = db.query(Interaction).all()
+    candidates = candidate_generation(profile, user, opportunities, interactions)
+    ranked = rank_candidates(candidates, lambda op: score_opportunity(op, profile, user))
     seen = set()
-    for op in opportunities:
+    results = []
+    cold_start = not any(item.user_id == user.id and item.event_type in {"view", "save", "apply"} for item in interactions)
+    for recommendation in ranked:
+        op = recommendation["opportunity"]
         fingerprint = opportunity_fingerprint(op)
         if fingerprint in seen:
             continue
         seen.add(fingerprint)
-        score, reasons, semantic_score = score_opportunity(op, profile, user)
-        ranked.append((score, op.deadline or date.max, op, reasons, semantic_score))
+        results.append(serialize(
+            op,
+            recommendation["rank_score"],
+            recommendation["reasons"],
+            recommendation["semantic_score"],
+            {**recommendation, "cold_start": cold_start},
+        ))
+    return results
 
-    ranked.sort(key=lambda x: (-x[0], x[1]))
-    return [serialize(op, score, reasons, semantic_score) for score, _, op, reasons, semantic_score in ranked]
+
+@router.get("/recommendation-diagnostics")
+def recommendation_diagnostics(
+    k: int = 5,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    profile = user.profile
+    opportunities = db.query(Opportunity).all()
+    interactions = db.query(Interaction).all()
+    matrix = build_interaction_matrix(interactions)
+    ranked = rank_candidates(
+        candidate_generation(profile, user, opportunities, interactions),
+        lambda op: score_opportunity(op, profile, user),
+    )
+    recommended_ids = [item["opportunity"].id for item in ranked]
+    relevant_ids = {item_id for item_id, weight in matrix.get(user.id, {}).items() if weight > 0}
+    return {
+        "user_item_matrix": {
+            "users": len(matrix),
+            "items": len({item_id for row in matrix.values() for item_id in row}),
+            "current_user": matrix.get(user.id, {}),
+        },
+        "candidate_generation": {
+            "count": len(ranked),
+            "sources": sorted({source for item in ranked for source in item["candidate_sources"]}),
+        },
+        "ranking": {
+            "top_k_ids": recommended_ids[:k],
+            "embedding_backend": "sentence-transformers" if _sentence_model() is not None else "token-cosine-fallback",
+            "cold_start": not relevant_ids and not profile_text_for_diagnostics(profile, user),
+        },
+        "metrics": {
+            "evaluation": "observed positive interactions",
+            "k": k,
+            "precision_at_k": round(precision_at_k(recommended_ids, relevant_ids, k), 4),
+            "recall_at_k": round(recall_at_k(recommended_ids, relevant_ids, k), 4),
+            "ndcg_at_k": round(ndcg_at_k(recommended_ids, relevant_ids, k), 4),
+        },
+    }
+
+
+def profile_text_for_diagnostics(profile, user):
+    return any([
+        profile.current_role, profile.degree, profile.branch, profile.target_roles, user.skills,
+    ])
+
+
+@router.post("/{opportunity_id}/interact")
+def record_interaction(
+    opportunity_id: int,
+    data: InteractionIn,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    if not db.get(Opportunity, opportunity_id):
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+    db.add(Interaction(user_id=user.id, opportunity_id=opportunity_id, event_type=data.event_type))
+    db.commit()
+    return {"recorded": True, "event_type": data.event_type}
 
 
 @router.get("/{opportunity_id}")
@@ -181,6 +261,7 @@ def save_opportunity(opportunity_id: int, db: Session = Depends(get_db), user=De
     )
     if not existing:
         db.add(SavedOpportunity(user_id=user.id, opportunity_id=opportunity_id))
-        db.commit()
+    db.add(Interaction(user_id=user.id, opportunity_id=opportunity_id, event_type="save"))
+    db.commit()
 
     return {"saved": True}
