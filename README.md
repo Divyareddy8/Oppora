@@ -33,6 +33,19 @@ New users without meaningful profile data or interactions use popularity and det
 
 No deployment is included.
 
+## Phase 3: tracking and notifications
+
+The profile workspace at `/profile` now includes an application tracker and alert settings. Saving an opportunity from the feed creates both a bookmark and a `saved` tracker item. Tracker statuses are `saved`, `applied`, `interview`, `offer`, `rejected`, and `withdrawn`.
+
+Notification endpoints include:
+
+- `GET/PUT /notifications/preferences`
+- `GET /notifications/deadline-alerts` and `POST /notifications/deadline-alerts/send`
+- `GET /notifications/digest` and `POST /notifications/digest/send`
+- `GET /notifications/history`
+
+Sends are recorded as `preview` when credentials are absent, which keeps local development safe. Configure real delivery with `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, `TELEGRAM_BOT_TOKEN`, and a Telegram chat ID saved in notification preferences. A production deployment should call the send endpoints from a daily scheduler or worker.
+
 ## Stack
 
 Frontend:

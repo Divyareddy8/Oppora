@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..database import get_db
-from ..models import Opportunity, Profile, SavedOpportunity, Skill
+from ..models import Application, Opportunity, Profile, SavedOpportunity, Skill
 from ..schemas import ProfileIn
 from .opportunities import serialize
 
@@ -89,5 +89,12 @@ def remove_bookmark(opportunity_id: int, user=Depends(get_current_user), db: Ses
     )
     if saved:
         db.delete(saved)
+        application = (
+            db.query(Application)
+            .filter(Application.user_id == user.id, Application.opportunity_id == opportunity_id, Application.status == "saved")
+            .first()
+        )
+        if application:
+            db.delete(application)
         db.commit()
     return {"removed": True}

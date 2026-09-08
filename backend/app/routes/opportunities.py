@@ -17,7 +17,7 @@ from ..matching import (
     recall_at_k,
     semantic_similarity,
 )
-from ..models import Interaction, Opportunity, SavedOpportunity, Skill
+from ..models import Application, Interaction, Opportunity, SavedOpportunity, Skill
 from ..schemas import InteractionIn
 
 router = APIRouter(prefix="/opportunities", tags=["opportunities"])
@@ -261,6 +261,13 @@ def save_opportunity(opportunity_id: int, db: Session = Depends(get_db), user=De
     )
     if not existing:
         db.add(SavedOpportunity(user_id=user.id, opportunity_id=opportunity_id))
+    application = (
+        db.query(Application)
+        .filter(Application.user_id == user.id, Application.opportunity_id == opportunity_id)
+        .first()
+    )
+    if not application:
+        db.add(Application(user_id=user.id, opportunity_id=opportunity_id, status="saved"))
     db.add(Interaction(user_id=user.id, opportunity_id=opportunity_id, event_type="save"))
     db.commit()
 

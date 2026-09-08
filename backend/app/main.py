@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, engine
-from .routes import auth, profile, opportunities
+from .routes import applications, auth, notifications, profile, opportunities
 
 Base.metadata.create_all(bind=engine)
 
@@ -19,6 +19,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(profile.router)
 app.include_router(opportunities.router)
+app.include_router(applications.router)
+app.include_router(notifications.router)
 
 
 @app.get("/")

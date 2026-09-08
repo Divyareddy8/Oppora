@@ -29,6 +29,9 @@ class User(Base):
     skills = relationship("Skill", secondary=user_skills, back_populates="users")
     saved = relationship("SavedOpportunity", back_populates="user", cascade="all, delete-orphan")
     interactions = relationship("Interaction", back_populates="user", cascade="all, delete-orphan")
+    applications = relationship("Application", back_populates="user", cascade="all, delete-orphan")
+    notification_preferences = relationship("NotificationPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    notifications = relationship("NotificationDelivery", back_populates="user", cascade="all, delete-orphan")
 
 
 class Profile(Base):
@@ -97,6 +100,55 @@ class SavedOpportunity(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="saved")
+    opportunity = relationship("Opportunity")
+
+
+class Application(Base):
+    __tablename__ = "applications"
+    __table_args__ = (Index("ix_applications_user_status", "user_id", "status"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    opportunity_id = Column(Integer, ForeignKey("opportunities.id"), nullable=False)
+    status = Column(String(30), default="saved", nullable=False)
+    notes = Column(Text, default="")
+    applied_at = Column(DateTime, nullable=True)
+    follow_up_date = Column(Date, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="applications")
+    opportunity = relationship("Opportunity")
+
+
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    email_enabled = Column(Boolean, default=True)
+    deadline_alerts = Column(Boolean, default=True)
+    daily_digest = Column(Boolean, default=True)
+    telegram_enabled = Column(Boolean, default=False)
+    telegram_chat_id = Column(String(100), default="")
+    digest_hour = Column(Integer, default=9)
+
+    user = relationship("User", back_populates="notification_preferences")
+
+
+class NotificationDelivery(Base):
+    __tablename__ = "notification_deliveries"
+    __table_args__ = (Index("ix_notification_deliveries_user_created", "user_id", "created_at"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    channel = Column(String(30), nullable=False)
+    notification_type = Column(String(40), nullable=False)
+    subject = Column(String(255), nullable=False)
+    body = Column(Text, nullable=False)
+    status = Column(String(30), default="queued", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="notifications")
 
 
 class Interaction(Base):

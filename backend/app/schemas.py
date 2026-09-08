@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import List, Literal, Optional
 from pydantic import BaseModel, EmailStr, ConfigDict
 
@@ -64,6 +64,22 @@ class OpportunityOut(BaseModel):
 
 class InteractionIn(BaseModel):
     event_type: Literal["view", "save", "apply", "dismiss"]
+
+
+class ApplicationIn(BaseModel):
+    status: Literal["saved", "applied", "interview", "offer", "rejected", "withdrawn"] = "saved"
+    notes: str = ""
+    applied_at: Optional[datetime] = None
+    follow_up_date: Optional[date] = None
+
+
+class NotificationPreferenceIn(BaseModel):
+    email_enabled: bool = True
+    deadline_alerts: bool = True
+    daily_digest: bool = True
+    telegram_enabled: bool = False
+    telegram_chat_id: str = ""
+    digest_hour: int = 9
 
 
 class OpportunityCreate(BaseModel):
