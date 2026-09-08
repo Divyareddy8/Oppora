@@ -1,111 +1,65 @@
-# Opportunity Radar — Phase 2 (Local MVP)
+# Oppora
 
-India-first opportunity intelligence platform for students and working professionals.
+Oppora is an opportunity discovery and application-tracking platform for students and working professionals. It combines personalized recommendations, application tracking, deadline alerts, and notification delivery in one workspace.
 
-Phase 1 implements:
-- JWT authentication
-- Student / professional profile
-- Opportunity database
-- Verified-source flag
-- Search + filters
-- Rule-based personalized feed
-- Save opportunities
-- Local SQLite database (easy to migrate to PostgreSQL later)
+## Features
 
-Phase 2 adds:
-- Profile and opportunity skill matching
-- Sentence Transformers semantic similarity when the model is available
-- Deterministic token similarity fallback for offline/local development
-- Better duplicate suppression across opportunity sources
-- Automatic company tier inference for known organizations
-- Semantic match scores and "Why this matches you" explanations in the feed
+- Email registration and JWT login
+- Student and professional profiles
+- Years-of-experience and seniority matching
+- Target-company preferences
+- Personalized opportunity feed with search and filters
+- Skill, role, location, type, tier, and semantic matching
+- Content-based and interaction-based recommendations
+- Cold-start recommendations for new users
+- Click, save, apply, and dismiss tracking
+- Learned user preferences and ranking diagnostics
+- Saved opportunities and application tracker
+- Application statuses: saved, applied, interview, offer, rejected, withdrawn
+- Follow-up dates and application notes
+- Deadline alerts and daily digest previews
+- Email notifications through SMTP
+- Telegram notifications through a Telegram bot
+- User reports for expired, incorrect, duplicate, spam, or unsafe listings
+- Admin moderation and source-health checks
+- Recommendation metrics: Precision@K, Recall@K, and NDCG
+- Admin analytics for interactions, reports, moderation, and source health
 
-## Recommendation engine
+## How to use
 
-The feed now uses a two-stage recommendation pipeline:
+1. Register with a Gmail address and log in.
+2. Complete your profile with your role, experience, skills, locations, and preferred opportunity types.
+3. Open the feed, search or filter opportunities, and review the match explanations.
+4. Save an opportunity to add it to your workspace.
+5. Open **Profile** to update application status, follow-up dates, and notes.
+6. Use **Alerts & delivery** to configure email, Telegram, deadline alerts, and daily digest settings.
+7. Report inaccurate or unsafe listings from the opportunity API when needed.
 
-1. Candidate generation combines profile/opportunity content similarity, similarity to positively interacted opportunities, and global popularity.
-2. Ranking blends the existing profile rules with retrieval signals and returns the ranking score and candidate sources for each item.
+Saving an opportunity creates both a bookmark and a `saved` tracker entry. Updating a tracker item to `applied`, `interview`, or `offer` improves future recommendations.
 
-`view`, `save`, `apply`, and `dismiss` events are stored in an interaction table and represented as a sparse user-item matrix. The authenticated `GET /opportunities/recommendation-diagnostics` endpoint exposes matrix dimensions, candidate sources, top-K IDs, cold-start state, and `Precision@K`, `Recall@K`, and `NDCG@K` over observed positive interactions.
+## Run locally
 
-New users without meaningful profile data or interactions use popularity and deterministic recency-independent fallback retrieval. Content similarity uses token cosine similarity by default; installing `sentence-transformers` activates the existing MiniLM embedding backend automatically, leaving the engine ready for a future persisted embedding index.
+### Backend
 
-No deployment is included.
+Windows PowerShell:
 
-## Phase 3: tracking and notifications
-
-The profile workspace at `/profile` now includes an application tracker and alert settings. Saving an opportunity from the feed creates both a bookmark and a `saved` tracker item. Tracker statuses are `saved`, `applied`, `interview`, `offer`, `rejected`, and `withdrawn`.
-
-Notification endpoints include:
-
-- `GET/PUT /notifications/preferences`
-- `GET /notifications/deadline-alerts` and `POST /notifications/deadline-alerts/send`
-- `GET /notifications/digest` and `POST /notifications/digest/send`
-- `GET /notifications/history`
-
-Sends are recorded as `preview` when credentials are absent, which keeps local development safe. Configure real delivery with `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, `TELEGRAM_BOT_TOKEN`, and a Telegram chat ID saved in notification preferences. A production deployment should call the send endpoints from a daily scheduler or worker.
-
-## Phases 4-6
-
-The recommendation profile now supports target companies and explicit seniority (`auto`, intern, junior, mid, senior, lead). Years of experience already live on the profile and are used for seniority compatibility. Click, save, and apply events feed learned organization, role, and opportunity-type preferences in the learning-to-rank score.
-
-Phase 6 governance endpoints include user reports, admin moderation, source health checks, and analytics. Set `ADMIN_EMAILS` to a comma-separated list before using `/admin/reports`, `/admin/opportunities/{id}/moderation`, `/admin/opportunities/{id}/source-health`, or `/admin/analytics`.
-
-## Stack
-
-Frontend:
-- Next.js + TypeScript
-- React
-- Plain CSS for Phase 1 simplicity
-
-Backend:
-- FastAPI + Python
-- SQLAlchemy
-- SQLite locally
-- JWT authentication
-- Pydantic
-- Optional Sentence Transformers for enhanced semantic matching
-
-## Run
-
-### 1. Backend
-
-```bash
+```powershell
 cd backend
 python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# macOS/Linux
-source .venv/bin/activate
-
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
 python -m app.seed
 uvicorn app.main:app --reload
 ```
 
 Backend: http://127.0.0.1:8000
-Swagger: http://127.0.0.1:8000/docs
+API documentation: http://127.0.0.1:8000/docs
 
-The API uses a deterministic token-similarity fallback by default. For the
-optional enhanced semantic model, install Sentence Transformers separately:
+### Frontend
 
-```bash
-pip install sentence-transformers
-```
+Open a second terminal:
 
-The first personalized-feed request may then download the `all-MiniLM-L6-v2`
-model. If it cannot be downloaded or loaded, the API continues using the
-deterministic fallback.
-
-### 2. Frontend
-
-Open another terminal:
-
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
@@ -113,18 +67,29 @@ npm run dev
 
 Frontend: http://localhost:3000
 
-## Git workflow
+The default demo account is `demo@student.com` with password `password123` after running the seed command.
 
-Keep `node_modules`, `.next`, Python caches, virtual environments, and local
-database files out of Git. They are covered by the repository `.gitignore` and
-should not be deleted before committing.
+## Optional notifications and embeddings
 
-```bash
-git status
-git add .
-git commit -m "Build Phase 2 semantic opportunity matching"
-git push origin main
+Without notification credentials, sends are stored as local previews. Configure real delivery with:
+
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`
+- `TELEGRAM_BOT_TOKEN` and a Telegram chat ID in the profile settings
+
+For enhanced semantic recommendations:
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+pip install sentence-transformers
 ```
 
-If your branch is not `main`, replace `main` with the current branch name.
+Oppora falls back to deterministic token similarity if the embedding model is unavailable.
 
+## Admin
+
+Set `ADMIN_EMAILS` to a comma-separated list of administrator emails. Admin endpoints cover reports, moderation, source-health checks, and analytics. A scheduler or worker should call notification send endpoints for automatic daily delivery.
+
+## Stack
+
+Next.js, React, TypeScript, FastAPI, SQLAlchemy, SQLite, Pydantic, and JWT authentication.
